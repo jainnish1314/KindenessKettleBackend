@@ -1,0 +1,78 @@
+@startuml
+package "Domain Model" #LightBlue {
+    class UserAccount {
+        - userId: Long
+        - firstName: String
+        - lastName: String
+        - username: String
+        - imageUrl: String
+        - emailAddress: String
+        - profileDescription: String
+        - isActive: Boolean
+        - emailNotificationEnabled: Boolean
+    }
+
+    class FoodType {
+        - foodId: Long
+        - foodType: String
+    }
+
+    class Address {
+        - addressId: Long
+        - addressLine: String
+        - pincode: String
+        - longitude: Double
+        - latitude: Double
+    }
+
+    class City {
+        - cityId: Long
+        - cityName: String
+    }
+
+    class DonationPost {
+        - postId: Long
+        - user: UserAccount
+        - foodType: FoodType
+        - address: Address
+        - foodImageUrl: String
+        - timeAvailable: LocalDateTime
+        - isPickupCompleted: Boolean
+        - createdAt: LocalDateTime
+    }
+
+    class Likes {
+        - likeId: Long
+        - user: UserAccount
+        - post: DonationPost
+        - likeDateTime: LocalDateTime
+    }
+
+    class Subscription {
+        - subscriptionId: Long
+        - user: UserAccount
+        - city: City
+    }
+
+    class Comment {
+        - commentId: int
+        - user: UserAccount
+        - donationPost: DonationPost
+        - commentContent: String
+        - commentDateTime: Date
+    }
+}
+
+UserAccount "1" -- "0..*" Likes
+UserAccount "1" -- "0..*" Subscription
+UserAccount "1" -- "0..*" Comment
+UserAccount "1" -- "0..*" DonationPost
+
+DonationPost "0..*" -- "0..*" Likes
+DonationPost "0..*" -- "0..*" Comment
+DonationPost "1" -- "1" Address
+DonationPost "0..*" -- "0..*" Subscription
+
+FoodType "1" -- "0..*" DonationPost
+City "1" -- "0..*" Address
+@enduml

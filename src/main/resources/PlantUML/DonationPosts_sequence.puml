@@ -1,0 +1,84 @@
+@startuml
+skinparam participant {
+    BackgroundColor<<User>> #lightblue
+    BackgroundColor<<DonationController>> #lightyellow
+    BackgroundColor<<CreateDonationService>> #lightcyan
+    BackgroundColor<<AuthenticationServer>> #lightgreen
+    BackgroundColor<<AddressRepository>> #lightpink
+    BackgroundColor<<UserAccountRepository>> #lightyellow
+    BackgroundColor<<FoodTypeRepository>> #lightgray
+    BackgroundColor<<DonationPostRepository>> #lightpurple
+    BackgroundColor<<NotificationService>> #lightcoral
+    BackgroundColor<<Database>> #lightgrey
+}
+
+participant User #lightblue
+participant DonationController #lightyellow
+participant AuthenticationServer #lightcyan
+participant CreateDonationService #lightgreen
+participant AddressRepository #lightpink
+participant UserAccountRepository #lightyellow
+participant FoodTypeRepository #lightgray
+participant DonationPostRepository #lightcoral
+participant NotificationService
+participant Database
+
+User -> DonationController: POST /donationPosts (with authentication token and request data)
+activate DonationController
+DonationController -> AuthenticationServer: Authenticate API token
+activate AuthenticationServer
+alt #lightgreen Authentication successful
+    AuthenticationServer --> DonationController: Authentication successful
+    deactivate AuthenticationServer
+    DonationController -> CreateDonationService: createDonationPost(request)
+    activate CreateDonationService
+    alt User ID found
+        CreateDonationService -> UserAccountRepository: findById(userId)
+        activate UserAccountRepository
+        UserAccountRepository --> CreateDonationService: user found
+        deactivate UserAccountRepository
+        alt Food type ID found
+            CreateDonationService -> FoodTypeRepository: findById(foodTypeId)
+            activate FoodTypeRepository
+            FoodTypeRepository --> CreateDonationService: foodType found
+            deactivate FoodTypeRepository
+            alt Address saved
+                CreateDonationService -> AddressRepository: save(address with addressLine, pincode, latitude, longitude)
+                activate AddressRepository
+                AddressRepository --> CreateDonationService: savedAddress
+                deactivate AddressRepository
+                CreateDonationService -> DonationPostRepository: save(donationPost)
+                activate DonationPostRepository
+                alt Donation post saved successfully
+                    DonationPostRepository --> CreateDonationService: savedDonationPost
+                    deactivate DonationPostRepository
+                    deactivate CreateDonationService
+                    CreateDonationService -> NotificationService: sendNotification(donationPost)
+                    activate NotificationService
+                    NotificationService --> CreateDonationService: Notification sent successfully
+                    deactivate NotificationService
+                    DonationController --> User: <color:green>200 OK: "Donation post added successfully"</color>
+                else #hotpink Donation post not saved
+                    DonationPostRepository --> CreateDonationService: Error saving donation post
+                    deactivate DonationPostRepository
+                    CreateDonationService -> AddressRepository: delete(savedAddress)
+                    AddressRepository --> CreateDonationService: Address reverted
+                    deactivate AddressRepository
+                   CreateDonationService --> User: <color:red>Error: "Failed to save donation post"</color>
+                end
+            else #hotpink Address not saved
+                CreateDonationService --> User: <color:red>Error: "Address not saved"</color>
+            end
+        else #hotpink Food type ID not found
+            CreateDonationService --> User: <color:red>Error: "Food type ID not found"</color>
+        end
+    else #hotpink User ID not found
+        CreateDonationService --> User: <color:red>Error: "User ID not found"</color>
+    end
+else #hotpink Authentication failed
+    AuthenticationServer --> DonationController: Authentication failed
+    deactivate AuthenticationServer
+    DonationController --> User: <color:red>Error: "Authentication failed"</color>
+end
+deactivate DonationController
+@enduml

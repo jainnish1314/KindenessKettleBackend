@@ -1,0 +1,132 @@
+@startuml
+skinparam class {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+package "Class Diagram" #LightBlue {
+    class UserAccount {
+        + id: Long
+        + username: String
+        + email: String
+        + password: String
+        + createdAt: LocalDateTime
+        + updatedAt: LocalDateTime
+    }
+
+    class FoodType {
+        + id: Long
+        + name: String
+    }
+
+    class Address {
+        + id: Long
+        + addressLine: String
+        + pincode: String
+        + longitude: Double
+        + latitude: Double
+    }
+
+    class City {
+        + id: Long
+        + name: String
+    }
+
+    class DonationPost {
+        + id: Long
+        + user: UserAccount
+        + foodType: FoodType
+        + address: Address
+        + timeAvailable: LocalDateTime
+        + foodImageUrl: String
+        + isPickupCompleted: Boolean
+        + createdAt: LocalDateTime
+        + updatedAt: LocalDateTime
+    }
+
+    class Likes {
+        + id: Long
+        + user: UserAccount
+        + donationPost: DonationPost
+        + likeDateTime: LocalDateTime
+    }
+
+    class Subscription {
+        + id: Long
+        + user: UserAccount
+        + city: City
+    }
+
+    class Comment {
+        + id: Long
+        + user: UserAccount
+        + donationPost: DonationPost
+        + commentContent: String
+        + commentDateTime: LocalDateTime
+    }
+
+    class MailService {
+        + sendEmails(toList: List<String>, subject: String, body: String): void
+        - sendEmail(to: String, subject: String, body: String): void
+    }
+
+    class CommentService {
+        + addComment(userId: Long, postId: Long, commentContent: String): Comment
+        + deleteComment(commentId: Long): boolean
+    }
+
+    class CreateDonationService {
+        + createDonationPost(request: DontationAddressDTO): DonationPost
+        + deleteDonationPost(postId: Long): void
+        + getDonationPostDetails(postId: Long): DonationPostDetailsDTO
+        + getAllDonationPostsDetails(): List<DonationPostDetailsDTO>
+    }
+
+    class LikesService {
+        + addLike(userId: Long, postId: Long): void
+        + getLikesSummaryByPostId(postId: Long): List<LikesSummaryDTO>
+    }
+
+    class StorageService {
+        + uploadFile(file: MultipartFile): String
+        + downloadFile(fileName: String): byte[]
+        + deleteFile(fileName: String): String
+        - convertMultiPartFileToFile(file: MultipartFile): File
+    }
+
+    class SubscriptionService {
+        + subscribe(user: UserAccount, city: City): void
+        + unsubscribe(user: UserAccount, city: City): void
+    }
+
+
+}
+
+
+UserAccount "1" -- "0..*" DonationPost : owns
+UserAccount "0..*" -- "0..*" Likes : likes
+UserAccount "0..*" -- "0..*" Comment : comments
+UserAccount "1" -- "0..*" Subscription : subscribes
+
+
+DonationPost "1" -- "0..*" Likes : has likes
+DonationPost "1" -- "0..*" Comment : has comments
+Address "0..*" -- "1" City : belongs to
+DonationPost "1" -- "1" FoodType : has type
+DonationPost "1" -- "1" Address
+
+UserAccount "1" -- "0..*" Subscription : subscribes
+
+MailService "1" -- "0..*" UserAccount : sends emails
+MailService "1" -- "0..*" DonationPost : sends emails
+
+CommentService "1" -- "0..*" Comment : manages comments
+
+CreateDonationService "1" -- "0..*" DonationPost : creates posts
+
+LikesService "1" -- "0..*" Likes : manages likes
+
+SubscriptionService "1" -- "0..*" Subscription : manages subscriptions
+
+StorageService "1" -- "0..*" DonationPost : stores images
+@enduml

@@ -1,0 +1,103 @@
+@startuml
+!define LikeColor Yellow
+!define RepoColor LightBlue
+!define RdsColor LightSteelBlue
+!define ClientColor LightYellow
+!define AuthColor LightGrey
+!define ControllerColor LightGreen
+!define ServiceColor LightYellow
+!define EntityColor LightSkyBlue
+
+skinparam sequenceParticipantBackgroundColor LightGray
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceArrowColor Black
+skinparam noteBackgroundColor LemonChiffon
+skinparam noteBorderColor Black
+
+participant User as User
+participant "Auth Server" as AuthServer #AuthColor
+participant "Subscription Controller" as SubscriptionController #ControllerColor
+participant "Subscription Service" as SubscriptionService #ServiceColor
+participant "UserAccount Repository" as UserAccountRepository #RepoColor
+participant "City Repository" as CityRepository #RepoColor
+participant "Subscription Repository" as SubscriptionRepository #RepoColor
+database "kindnesskattledb\n(RDS)" as SubscriptionDB #RdsColor
+
+User -> AuthServer: Request Auth Token
+activate AuthServer
+AuthServer --> User: Auth Token
+deactivate AuthServer
+
+User -> SubscriptionController: POST /subscriptions/subscribe/{userId}/{cityId}
+activate SubscriptionController
+SubscriptionController -> AuthServer: Validate Auth Token
+activate AuthServer
+AuthServer --> SubscriptionController: Valid
+deactivate AuthServer
+SubscriptionController -> UserAccountRepository: findById(userId)
+activate UserAccountRepository
+UserAccountRepository --> SubscriptionController: User
+SubscriptionController -> CityRepository: findById(cityId)
+activate CityRepository
+CityRepository --> SubscriptionController: City
+SubscriptionController -> SubscriptionService: subscribe(User, City)
+activate SubscriptionService
+SubscriptionService -> SubscriptionRepository: save(Subscription)
+activate SubscriptionRepository
+SubscriptionRepository -> SubscriptionDB: INSERT Subscription
+SubscriptionDB --> SubscriptionRepository: Subscription Saved
+SubscriptionRepository --> SubscriptionService: Saved Subscription
+deactivate SubscriptionRepository
+deactivate SubscriptionService
+deactivate SubscriptionController
+deactivate UserAccountRepository
+deactivate CityRepository
+
+note right: Validates the user's\nauthentication token
+
+alt Invalid user or city
+    SubscriptionController --> User: ResponseEntity.notFound()
+    deactivate SubscriptionController
+    note right: Responds with\nnot found error
+else Subscription already exists
+    SubscriptionController --> User: ResponseEntity.badRequest()
+    deactivate SubscriptionController
+    note right: Responds with\nbad request error
+end
+
+User -> SubscriptionController: DELETE /subscriptions/unsubscribe/{userId}/{cityId}
+activate SubscriptionController
+SubscriptionController -> AuthServer: Validate Auth Token
+activate AuthServer
+AuthServer --> SubscriptionController: Valid
+deactivate AuthServer
+SubscriptionController -> UserAccountRepository: findById(userId)
+activate UserAccountRepository
+UserAccountRepository --> SubscriptionController: User
+SubscriptionController -> CityRepository: findById(cityId)
+activate CityRepository
+CityRepository --> SubscriptionController: City
+SubscriptionController -> SubscriptionService: unsubscribe(User, City)
+activate SubscriptionService
+SubscriptionService -> SubscriptionRepository: findByUserAndCity(User, City)
+activate SubscriptionRepository
+SubscriptionRepository --> SubscriptionService: Subscription
+SubscriptionService -> SubscriptionRepository: delete(Subscription)
+activate SubscriptionRepository
+SubscriptionRepository -> SubscriptionDB: DELETE Subscription
+SubscriptionDB --> SubscriptionRepository: Subscription Deleted
+SubscriptionRepository --> SubscriptionService: Deleted Subscription
+deactivate SubscriptionRepository
+deactivate SubscriptionService
+deactivate SubscriptionController
+deactivate UserAccountRepository
+deactivate CityRepository
+
+note right: Validates the user's\nauthentication token
+
+alt Subscription not found
+    SubscriptionController --> User: ResponseEntity.notFound()
+    deactivate SubscriptionController
+    note right: Responds with\nnot found error
+end
+@enduml

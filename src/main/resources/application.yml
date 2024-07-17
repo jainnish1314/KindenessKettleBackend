@@ -1,0 +1,36 @@
+server:
+  port: 8085
+
+spring:
+  datasource:
+    url: jdbc:sqlserver://kindnesskattledb.chevdymucho3.eu-west-1.rds.amazonaws.com:1433;databaseName=dbkindkattle;encrypt=true;trustServerCertificate=true
+    username: admin
+    password: imkrsnna
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: singhkri727@gmail.com
+    password: sjzqmbaemwrqiyat
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+cloud:
+  aws:
+    credentials:
+      access-key: AROA3HTJFHDIXS2OXA3BL:Ajay.Singh@bbd.co.za
+      secret-key: YebhVGSuMDBKAnXNCQkVD3wGA8tQ0n9bl6Ds1fzS
+    region:
+      static: us-east-1
+  stack:
+    auto: false
+
+application:
+  bucket:
+    name: testingabcde
+

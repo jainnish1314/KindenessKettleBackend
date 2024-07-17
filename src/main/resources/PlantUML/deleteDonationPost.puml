@@ -1,0 +1,53 @@
+@startuml
+skinparam participant {
+    BackgroundColor<<User>> #lightblue
+    BackgroundColor<<DonationController>> #lightyellow
+    BackgroundColor<<AuthenticationServer>> #lightgreen
+    BackgroundColor<<DonationPostRepository>> #blue
+    BackgroundColor<<AddressRepository>> #lightpink
+}
+
+participant User  #lightblue
+participant DonationController #lightyellow
+participant AuthenticationServer #lightgreen
+participant DonationPostRepository #LightCoral
+participant AddressRepository #lightpink
+
+User -> DonationController: deleteDonationPost(postId, token)
+activate User
+activate DonationController
+DonationController -> AuthenticationServer: ValidateToken(token)
+activate AuthenticationServer
+alt #lightgreen Token validation successful
+    AuthenticationServer --> DonationController: Validation successful
+    deactivate AuthenticationServer
+    DonationController -> DonationPostRepository: findAddressId(postId)
+    activate DonationPostRepository
+    DonationPostRepository --> DonationController: addressId
+    deactivate DonationPostRepository
+    opt Delete Donation Post
+        DonationController -> DonationPostRepository: delete(postId)
+        activate DonationPostRepository
+        alt Deletion successful
+            DonationPostRepository --> DonationController: Success
+            deactivate DonationPostRepository
+            opt Delete Address
+                DonationController -> AddressRepository: delete(addressId)
+                activate AddressRepository
+                AddressRepository --> DonationController: Success
+                deactivate AddressRepository
+            end
+        else #lightpink Deletion failed
+            DonationPostRepository --> DonationController: Error: "Referential integrity violation"
+            deactivate DonationPostRepository
+        end
+    end
+    DonationController --> User: Success/Error
+else #lightpink Token validation failed
+    AuthenticationServer --> DonationController: Validation failed
+    deactivate AuthenticationServer
+    DonationController --> User: Error: "Token validation failed"
+end
+deactivate DonationController
+deactivate User
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+skinparam participant {
+    BackgroundColor<<User>> #lightblue
+    BackgroundColor<<DonationController>> #lightyellow
+    BackgroundColor<<AuthenticationServer>> #lightgreen
+    BackgroundColor<<DonationPostRepository>> #lightpurple
+}
+
+participant User #lightblue
+participant DonationController #lightyellow
+participant AuthenticationServer #lightgreen
+participant DonationPostRepository #LightPink
+
+User -> DonationController: getDonationPostDetails(postId, token)
+activate User
+activate DonationController
+DonationController -> AuthenticationServer: ValidateToken(token)
+activate AuthenticationServer
+alt #lightgreen Token validation successful
+    AuthenticationServer --> DonationController: Validation successful
+    deactivate AuthenticationServer
+    DonationController -> DonationPostRepository: findById(postId)
+    activate DonationPostRepository
+    alt Donation post found
+        DonationPostRepository --> DonationController: donationPost
+        deactivate DonationPostRepository
+        opt Create DTO
+            activate DonationController
+            DonationController -> DonationPostDetailsDTO : new()
+            activate DonationPostDetailsDTO
+            DonationPostDetailsDTO --> DonationController: detailsDTO
+            deactivate DonationPostDetailsDTO
+            deactivate DonationController
+        end
+        DonationController --> User: detailsDTO
+    else #LightPink Donation post not found
+        DonationPostRepository --> DonationController: Error: "Donation post not found"
+        DonationController --> User: Error: "Donation post not found"
+    end
+else #LightPink Token validation failed
+    AuthenticationServer --> DonationController: Validation failed
+    deactivate AuthenticationServer
+    DonationController --> User: Error: "Token validation failed"
+end
+deactivate DonationController
+deactivate User
+@enduml

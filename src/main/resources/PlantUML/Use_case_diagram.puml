@@ -1,0 +1,46 @@
+@startuml
+left to right direction
+
+actor User as u
+actor Admin as a
+
+rectangle "User" {
+    usecase (View Donation Posts) as UC1
+    usecase (Create Donation Post) as UC2
+    usecase (Like Donation Post) as UC3
+    usecase (Comment on Donation Post) as UC4
+    usecase (Subscribe to City) as UC5
+    usecase (Login) as UC6
+    usecase (Register) as UC7
+    usecase (Update Profile) as UC8
+    usecase (Logout) as UC9
+    usecase (Receive Notification) as UC10
+}
+
+rectangle "Admin" {
+    usecase (Manage Donation Posts) as UC11
+    usecase (Manage Users) as UC12
+}
+
+u --> UC1
+u --> UC2
+u --> UC3
+u --> UC4
+u --> UC5
+u --> UC6
+u --> UC7
+u --> UC8
+u --> UC9
+u --> UC10
+
+a --> UC11
+a --> UC12
+
+
+UC5 --> UC10 : <<include>>
+UC10 --> UC2 : <<extend>>
+
+note right of UC6 : User logs into the system to access the application.
+note right of UC7 : New users register to create an account in the system.
+note right of UC2 : Email notification sent to subscribed users when a post is created.
+@enduml

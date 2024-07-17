@@ -1,0 +1,71 @@
+@startuml
+!define LikeColor Yellow
+!define RepoColor LightBlue
+!define RdsColor LightSteelBlue
+!define ClientColor LightYellow
+!define AuthColor LightGrey
+
+skinparam sequenceParticipantBackgroundColor LightGray
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceArrowColor Black
+skinparam noteBackgroundColor LemonChiffon
+skinparam noteBorderColor Black
+
+participant Client #ClientColor
+participant "Auth Server" as Auth #AuthColor
+participant LikeController
+participant LikesService
+participant LikesRepository #RepoColor
+database "RDS\n(Database)" #RdsColor
+
+Client -> Auth: requestAuthToken(userId)
+activate Auth
+Auth --> Client: authToken
+deactivate Auth
+
+Client -> LikeController: /kindnessKettle/like/add(userId, postId, authToken)
+activate LikeController
+LikeController -> Auth: validateAuthToken(authToken)
+activate Auth
+Auth --> LikeController: Valid
+deactivate Auth
+alt Invalid Auth Token
+    LikeController --> Client: ResponseEntity.unauthorized()
+    deactivate LikeController
+    deactivate Client
+else Valid Auth Token
+    LikeController -> LikesService: addLike(userId, postId)
+    activate LikesService
+    LikesService -> LikesRepository: findById(userId)
+    activate LikesRepository
+    LikesRepository -> "RDS\n(Database)": SELECT UserAccount
+    activate "RDS\n(Database)"
+    "RDS\n(Database)" --> LikesRepository: UserAccount Data
+    LikesRepository --> LikesService: UserAccount
+    LikesService -> LikesRepository: findById(postId)
+    LikesRepository -> "RDS\n(Database)": SELECT DonationPost
+    "RDS\n(Database)" --> LikesRepository: DonationPost Data
+    LikesRepository --> LikesService: DonationPost
+    LikesService -> LikesRepository: findByUserAndPost(UserAccount, DonationPost)
+    LikesRepository --> LikesService: Optional<Likes]
+    note right: Check if user has already\n liked the post
+    alt Like already exists
+        LikesService --> LikeController: ResponseEntity.badRequest()
+        deactivate LikesService
+        LikeController --> Client: ResponseEntity.badRequest()
+    else Like does not exist
+        LikesService -> LikesRepository: save(Likes)
+        note right: Save new Like
+        LikesRepository -> "RDS\n(Database)": INSERT Like
+        "RDS\n(Database)" --> LikesRepository: Like Saved
+        LikesRepository --> LikesService: Saved Like
+        LikesService --> LikeController: ResponseEntity.ok("Like added successfully.")
+        deactivate LikesService
+        LikeController --> Client: ResponseEntity.ok("Like added successfully.")
+    end
+    deactivate LikesRepository
+    deactivate "RDS\n(Database)"
+end
+deactivate LikeController
+deactivate Client
+@enduml
